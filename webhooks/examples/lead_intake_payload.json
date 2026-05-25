@@ -1,0 +1,17 @@
+{
+  "event_type": "lead_intake",
+  "source": "ai_receptionist_prototype",
+  "caller": {
+    "name": "Sample Caller",
+    "preferred_contact": "email",
+    "contact_value": "sample@example.com"
+  },
+  "lead": {
+    "service_interest": "AI automation consultation",
+    "timeline": "This month",
+    "urgency": "medium"
+  },
+  "summary": "Caller wants to learn about an AI automation consultation this month.",
+  "requires_human_review": true
+}
+

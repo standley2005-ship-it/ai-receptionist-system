@@ -1,0 +1,16 @@
+{
+  "event_type": "appointment_request",
+  "source": "ai_receptionist_prototype",
+  "caller": {
+    "name": "Sample Caller",
+    "preferred_contact": "email",
+    "contact_value": "sample@example.com"
+  },
+  "appointment": {
+    "requested_window": "Tuesday afternoon",
+    "reason": "Interested in scheduling a service consultation"
+  },
+  "summary": "Caller requested a consultation and prefers a Tuesday afternoon appointment.",
+  "requires_human_review": true
+}
+
