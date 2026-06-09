@@ -1,76 +1,138 @@
 # AI Receptionist System
 
-Prototype AI receptionist workflow for handling inbound business calls, collecting caller details, answering common questions, and preparing structured follow-up data for a CRM or booking system.
+> Webhook-driven call intake and routing for AI voice agents.  
+> Receives inbound call events, classifies intent, and routes to the right workflow —
+> CRM intake, calendar booking, or escalation.
 
-> Status: Prototype. This repository documents the system design, prompts, workflow logic, and webhook examples. It does not claim to be connected to a live phone system.
+---
 
-## Project Overview
+## Problem
 
-This project shows how an AI receptionist could support small businesses by answering calls, qualifying the reason for the call, capturing contact information, and routing the request to the right follow-up workflow.
+Small businesses miss leads because inbound calls go unmanaged. No consistent intake,
+no automatic routing, no follow-up logic. A human receptionist costs $35,000/year.
+Voicemail converts at under 5%.
 
-The goal is to demonstrate AI automation, prompt design, backend webhook thinking, and workflow documentation in a clean portfolio format.
+## Solution
 
-## Features
+An AI receptionist layer that handles inbound calls via a voice agent (Vapi / Retell),
+classifies caller intent, and fires a webhook to the right downstream system — CRM,
+calendar, or SMS alert — automatically.
 
-- Receptionist system prompt for professional inbound call handling.
-- Call intake workflow for new leads, existing customers, appointment requests, and missed-call follow-up.
-- Example webhook payloads for appointment requests and lead intake.
-- Architecture notes showing how a Vapi/OpenAI-style voice agent could connect to backend services.
-- Safety notes for handling private customer data and avoiding secrets in source control.
+---
+
+## Architecture
+
+```mermaid
+flowchart TD
+    Caller -->|Inbound Call| VoiceAgent["Voice Agent\nVapi / Retell AI"]
+    VoiceAgent -->|System Prompt| OpenAI["OpenAI GPT-4o\nCall Classification"]
+    VoiceAgent -->|POST call_type + data| Webhook["Flask Webhook Handler\nwebhooks/webhook_handler.py"]
+    Webhook -->|new_lead| CRM["CRM Record\nHubSpot / Airtable"]
+    Webhook -->|appointment_request| Calendar["Calendar Booking\nGoogle Calendar / Calendly"]
+    Webhook -->|existing_customer| Slack["Internal Alert\nSlack / Email"]
+    Webhook -->|after_hours| SMS["SMS Alert\nTwilio"]
+    Webhook --> EventLog["Event Log\nIn-memory / DB"]
+```
+
+---
 
 ## Tech Stack
 
-- Prompt design
-- Vapi/OpenAI-style voice agent architecture
-- Webhooks and JSON payloads
-- Python example webhook handler
-- Markdown documentation
+| Layer | Technology |
+|---|---|
+| Voice AI | Vapi / Retell AI |
+| Language Model | OpenAI GPT-4o |
+| Webhook Handler | Python + Flask |
+| Data Format | JSON |
+| Testing | pytest |
+| Integrations (planned) | Twilio, Google Calendar, HubSpot |
 
-## Folder Structure
+---
 
-```text
+## Project Structure
+
+```
 ai-receptionist-system/
-  README.md
-  .gitignore
-  docs/
-    architecture.md
-    security-notes.md
-  prompts/
-    receptionist-system-prompt.md
-  workflows/
-    call-flow.md
-    intake-workflow.md
-  webhooks/
-    examples/
-      appointment_request_payload.json
-      lead_intake_payload.json
-      python_webhook_example.py
-  screenshots/
-    .gitkeep
+├── prompts/
+│   └── receptionist_system_prompt.md   # Core AI agent prompt
+├── webhooks/
+│   ├── webhook_handler.py              # Flask app — routes call events
+│   └── examples/
+│       ├── appointment_payload.json    # Sample webhook payload
+│       └── lead_intake_payload.json   # Sample webhook payload
+├── workflows/
+│   └── call-intake-flow.md            # Call routing logic docs
+├── tests/
+│   └── test_webhook_handler.py        # Flask test client tests
+├── docs/
+│   └── architecture.md
+├── requirements.txt
+└── README.md
 ```
 
-## Setup Instructions
+---
 
-1. Clone the repository.
-2. Review `prompts/receptionist-system-prompt.md`.
-3. Review the call workflow in `workflows/call-flow.md`.
-4. Use the JSON examples in `webhooks/examples/` as templates for a future backend integration.
-5. Run the local webhook example:
+## Quick Start
 
 ```bash
-python webhooks/examples/python_webhook_example.py
+git clone https://github.com/standley2005-ship-it/ai-receptionist-system
+cd ai-receptionist-system
+pip install -r requirements.txt
+python webhooks/webhook_handler.py
 ```
 
-6. Add environment variables locally if connecting to real services later. Do not commit API keys.
+Test with curl:
+```bash
+curl -X POST http://localhost:5000/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"call_type": "new_lead", "caller_name": "Marcus Webb", "caller_phone": "555-0142", "business_interest": "HVAC quote", "urgency": "this_week"}'
+```
 
-## Screenshots
+Expected response:
+```json
+{
+  "status": "ok",
+  "event": {
+    "type": "new_lead",
+    "name": "Marcus Webb",
+    "phone": "555-0142",
+    "interest": "HVAC quote",
+    "urgency": "this_week",
+    "action": "crm_record_created"
+  }
+}
+```
 
-Screenshots will be added after a live demo, dashboard mockup, or call-flow visualization is available.
+---
 
-## Future Improvements
+## Supported Call Types
 
-- Add a small Flask or FastAPI webhook service.
-- Add CRM integration examples.
-- Add automated tests for webhook payload validation.
-- Add a demo call transcript.
-- Add dashboard screenshots once a UI exists.
+| call_type | Routing Action | Downstream |
+|---|---|---|
+| `new_lead` | CRM intake | HubSpot / Airtable record |
+| `appointment_request` | Calendar booking | Google Calendar / Calendly |
+| `existing_customer` | Account lookup | Slack alert to team |
+| `after_hours` | Voicemail capture | Twilio SMS to on-call |
+
+---
+
+## Running Tests
+
+```bash
+pytest tests/ -v
+```
+
+---
+
+## Roadmap
+
+- [ ] Live CRM write integration (HubSpot API)
+- [ ] Google Calendar booking via API
+- [ ] Twilio SMS for after-hours alerts
+- [ ] Call transcript storage in SQLite
+- [ ] Retry logic for failed downstream calls
+- [ ] Deploy to Railway / Render
+
+---
+
+*Built to explore voice AI architecture, webhook routing, and event-driven backend design.*
